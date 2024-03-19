@@ -1,0 +1,241 @@
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output
+import plotly.graph_objs as go
+import numpy as np
+import base64
+
+# Create a Dash app
+app = dash.Dash(__name__)
+
+# Layout of the app
+app.layout = html.Div([
+    html.H1("Regulator PID dla silnika DC", style={'text-align': 'center'}),
+    html.Div([
+        html.Img(src='data:image/png;base64,{}'.format(base64.b64encode(open('1.png', 'rb').read()).decode()),
+                 alt='Example Image', style={'width': '60%'}),
+    ], style={'width': '100%', 'float': 'right', 'position': 'static', 'top': 10, 'z-index': 0}),
+html.Div([
+        html.Img(src='data:image/png;base64,{}'.format(base64.b64encode(open('2.png', 'rb').read()).decode()),
+                 alt='Example Image', style={'width': '60%'}),
+    ], style={'width': '100%', 'float': 'right', 'position': 'static', 'top': 10, 'z-index': 0}),
+html.Div([
+        html.Img(src='data:image/png;base64,{}'.format(base64.b64encode(open('3.png', 'rb').read()).decode()),
+                 alt='Example Image', style={'width': '60%'}),
+    ], style={'width': '100%', 'float': 'right', 'position': 'static', 'top': 0, 'right' : 50, 'z-index': 0}),
+
+
+    # Wrapper div for the entire layout with scrolling enabled
+    html.Div([
+        # paste the text here
+        # Div for plots (left side)
+        html.Div([
+            dcc.Graph(
+                id='speed-plot',
+            ),
+
+            dcc.Graph(
+                id='pid-output-plot',
+            ),
+
+            dcc.Graph(
+                id='current-plot',
+            ),
+
+            dcc.Graph(
+                id='voltage-plot',
+            ),
+        ], style={'width': '70%', 'float': 'left', 'right': 40}),
+
+        # Div for sliders (right side)
+        html.Div([
+            # Sliders in a row
+            html.Div([
+                html.Label("Kp:"),
+                dcc.Slider(
+                    id='slider-kp',
+                    min=0,
+                    max=50,
+                    step=0.1,
+                    value=15,
+                    vertical=True,
+                    updatemode='drag',
+                    tooltip={'always_visible': True},
+                    marks=None
+                ),
+            ], style={'float': 'left', 'right': 240, 'top': 20, 'position': 'absolute'}),
+
+            html.Div([
+                html.Label("Ki:"),
+                dcc.Slider(
+                    id='slider-ki',
+                    min=0,
+                    max=30,
+                    step=0.1,
+                    value=5,
+                    vertical=True,
+                    updatemode='drag',
+                    tooltip={'always_visible': True},
+                    marks=None
+                ),
+            ], style={'float': 'left', 'right': 160, 'top': 20, 'position': 'absolute'}),
+
+            html.Div([
+                html.Label("Kd:"),
+                dcc.Slider(
+                    id='slider-kd',
+                    min=0,
+                    max=0.1,
+                    step=0.001,
+                    value=0.04,
+                    vertical=True,
+                    updatemode='drag',
+                    tooltip={'always_visible': True},
+                    marks=None
+                ),
+            ], style={'float': 'left', 'right': 80, 'top': 20, 'position': 'absolute'}),
+            html.Div([
+                html.Label("Target speed:"),
+                dcc.Slider(
+                    id='slider-target',
+                    min=0,
+                    max=10,
+                    step=0.01,
+                    value=5.0,
+
+                    updatemode='drag',
+                    tooltip={'always_visible': True},
+                    marks=None
+                ),
+            ], style={'float': 'left', 'right': 40, 'top': 500, 'width': '80%', 'position': 'absolute'}),
+
+        ], style={'width': '25%', 'height': '15%', 'float': 'left', 'position': 'sticky', 'top': 10, 'left': 1100,
+                  'border': '5px solid #ddd', 'border-radius': '5px'})
+
+    ], style={'height': '500vh', 'top': 0})
+])
+
+
+# Callback to update the plots based on user input
+@app.callback(
+    [Output('speed-plot', 'figure'),
+     Output('pid-output-plot', 'figure'),
+     Output('current-plot', 'figure'),
+     Output('voltage-plot', 'figure')],
+    [
+        Input('slider-kp', 'value'),
+        Input('slider-ki', 'value'),
+        Input('slider-kd', 'value'),
+        Input('slider-target', 'value')
+    ]
+)
+def update_plots(kp, ki, kd, target):
+    global Kp, Ki, Kd
+    Kp = kp
+    Ki = ki
+    Kd = kd
+    target_speed = target  # Pożądana prędkość obrotowa silnika
+
+    # ... (previous code for simulation)
+    R = 2.0  # Ohm
+    L = 0.1  # Henry
+    B = 0.5  # Współczynnik tarcia
+    J = 0.1  # Moment bezwładności
+    Km = 0.1  # Stała momentu
+    Ke = 0.1  # Stała elektromagnetyczna odwrotnego pola
+    Mm = 1
+
+    I = 0.0
+    E = 0.0
+    speed = 0.0
+    previous_error = 0.0
+    integral = 0.0
+
+    # Listy do przechowywania danych do rysowania wykresów
+    speed_history = []
+    target_speed_history = []
+    pid_output_history = []
+    current_history = []
+    voltage_history = []
+
+    # Ograniczenie sygnału wyjściowego regulatora
+    pid_output_limit = 72
+
+    # Ograniczenie maksymalnej prędkości obrotowej silnika
+    max_speed_limit = 20.0  # rad/s
+
+    # Ograniczenie początkowej prędkości kątowej
+    initial_speed_limit = 0  # rad/s
+
+    # Parametry symulacji
+    Tp = 0.01
+    time = np.arange(0, 2.5, Tp)
+
+    # Symulacja silnika
+    for t in time:
+        # Obliczenia sterowania PID
+        error = target_speed - speed
+        integral += error * Tp
+        derivative = (error - previous_error) / Tp
+        pid_output = Kp * (error + Ki * integral + Kd * derivative)
+
+        # Ograniczenie sygnału wyjściowego regulatora
+        pid_output = np.clip(pid_output, 0, pid_output_limit)
+
+        # Sterowanie silnikiem z uwzględnieniem wyjścia PID
+        voltage = pid_output
+        Ep = E
+        E = ((Km * I + Mm - B * E) / J) * Tp + E
+
+        I = ((voltage - R * I - Ke * Ep) / L) * Tp + I
+
+        # Obliczenie napięcia na uzwojeniu
+        armature_voltage = R * I + Ke * E
+
+        # Ograniczenie maksymalnej prędkości obrotowej silnika
+        speed = np.clip(E, 0, max_speed_limit)
+
+        # Ograniczenie początkowej prędkości kątowej
+        if t < Tp and abs(speed) < initial_speed_limit:
+            speed = np.sign(target_speed) * initial_speed_limit
+
+        # Zapis danych do rysowania wykresów
+        speed_history.append(speed)
+        target_speed_history.append(target_speed)
+        pid_output_history.append(pid_output)
+        current_history.append(I)
+        voltage_history.append(armature_voltage)
+
+        # Aktualizacja poprzedniego błędu
+        previous_error = error
+
+    # Update the figures for each subplot
+    speed_figure = {
+        'data': [
+            go.Scatter(x=time, y=speed_history, name='Actual Speed'),
+            go.Scatter(x=time, y=target_speed_history, mode='lines', line={'dash': 'dash'}, name='Target Speed')
+        ],
+        'layout': go.Layout(title='Speed Plot', xaxis={'title': 'Time (s)'}, yaxis={'title': 'Speed (rad/s)'})
+    }
+
+    pid_output_figure = {
+        'data': [go.Scatter(x=time, y=pid_output_history, name='PID Output')],
+        'layout': go.Layout(title='PID Output Plot', xaxis={'title': 'Time (s)'}, yaxis={'title': 'PID Output'})
+    }
+
+    current_figure = {
+        'data': [go.Scatter(x=time, y=current_history, name='Armature Current')],
+        'layout': go.Layout(title='Armature Current Plot', xaxis={'title': 'Time (s)'}, yaxis={'title': 'Current (A)'})
+    }
+
+    voltage_figure = {
+        'data': [go.Scatter(x=time, y=voltage_history, name='Armature Voltage')],
+        'layout': go.Layout(title='Armature Voltage Plot', xaxis={'title': 'Time (s)'}, yaxis={'title': 'Voltage (V)'})
+    }
+
+    return speed_figure, pid_output_figure, current_figure, voltage_figure
+
+
+# Run the app
+if __name__ == '__main__':
+    app.run_server(debug=True)
