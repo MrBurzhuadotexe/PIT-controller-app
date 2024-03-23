@@ -5,30 +5,40 @@ import plotly.graph_objs as go
 import numpy as np
 import base64
 
-# Create a Dash app
 app = dash.Dash(__name__)
 
-# Layout of the app
+dropdown_options = [
+    {'label': 'PL', 'value': 'opt1'},
+    {'label': 'EN', 'value': 'opt2'},
+    {'label': 'RU', 'value': 'opt3'}
+]
+
 app.layout = html.Div([
-    html.H1("Regulator PID dla silnika DC", style={'text-align': 'center'}),
     html.Div([
-        html.Img(src='data:image/png;base64,{}'.format(base64.b64encode(open('1.png', 'rb').read()).decode()),
-                 alt='Example Image', style={'width': '60%'}),
-    ], style={'width': '100%', 'float': 'right', 'position': 'static', 'top': 10, 'z-index': 0}),
-html.Div([
-        html.Img(src='data:image/png;base64,{}'.format(base64.b64encode(open('2.png', 'rb').read()).decode()),
-                 alt='Example Image', style={'width': '60%'}),
-    ], style={'width': '100%', 'float': 'right', 'position': 'static', 'top': 10, 'z-index': 0}),
-html.Div([
-        html.Img(src='data:image/png;base64,{}'.format(base64.b64encode(open('3.png', 'rb').read()).decode()),
-                 alt='Example Image', style={'width': '60%'}),
-    ], style={'width': '100%', 'float': 'right', 'position': 'static', 'top': 0, 'right' : 50, 'z-index': 0}),
-
-
-    # Wrapper div for the entire layout with scrolling enabled
+        html.Img(
+            src='data:image/png;base64,{}'.format(base64.b64encode(open('cropped-Logo_PP.png', 'rb').read()).decode()),
+            alt='Example Image', width='90'),
+        html.H1('Regulator PID', style={'font-family': 'Arial'}),
+        dcc.Dropdown(
+            id='dropdown',
+            options=dropdown_options,
+            value='opt1'
+        ),
+        html.Div(id='output-container')
+    ], style={'grid-column-gap': '0px', 'grid-row-gap': '0px',
+             # 'background-color': '#f6f6f6',
+              'flex-flow': 'row',
+              'grid-template-rows': 'auto',
+              'grid-template-columns': '.5fr 3.75fr .5fr', 'grid-auto-columns': '1fr', 'grid-auto-flow': 'row dense',
+              'justify-content': 'flex-end',
+              'align-items': 'center', 'justify-items': 'start',
+              'display': 'grid'}),
     html.Div([
-        # paste the text here
-        # Div for plots (left side)
+        html.H5(
+            'Celem projektu jest stworzenie symulacji silnika prądu stałego uwzględniającej jego charakterystyki fizyczne oraz zaimplementowanie regulatora PID dla kontroli prędkości obrotowej silnika w języku programowania Python. W celu osiągnięcia tego celu przeprowadziliśmy analizę i przekształcenia fizycznych równań silnika.',
+            style={'font-family': 'Arial', 'font-size': '20px', 'font-weight': '400', 'line-height': '30px'}),
+    ], style={'padding-left': '180px', 'padding-right': '180px', 'background-color': '#f6f6f6'}),
+    html.Div([
         html.Div([
             dcc.Graph(
                 id='speed-plot',
@@ -46,75 +56,73 @@ html.Div([
                 id='voltage-plot',
             ),
         ], style={'width': '70%', 'float': 'left', 'right': 40}),
-
-        # Div for sliders (right side)
         html.Div([
-            # Sliders in a row
             html.Div([
-                html.Label("Kp:"),
-                dcc.Slider(
-                    id='slider-kp',
-                    min=0,
-                    max=50,
-                    step=0.1,
-                    value=15,
-                    vertical=True,
-                    updatemode='drag',
-                    tooltip={'always_visible': True},
-                    marks=None
-                ),
-            ], style={'float': 'left', 'right': 240, 'top': 20, 'position': 'absolute'}),
+                html.Div([
+                    html.Label("Kp:"),
+                    dcc.Slider(
+                        id='slider-kp',
+                        min=0,
+                        max=50,
+                        step=0.1,
+                        value=15,
+                        updatemode='drag',
+                        tooltip={'always_visible': True},
+                        marks=None
+                    ),
+                ], style={}),
 
-            html.Div([
-                html.Label("Ki:"),
-                dcc.Slider(
-                    id='slider-ki',
-                    min=0,
-                    max=30,
-                    step=0.1,
-                    value=5,
-                    vertical=True,
-                    updatemode='drag',
-                    tooltip={'always_visible': True},
-                    marks=None
-                ),
-            ], style={'float': 'left', 'right': 160, 'top': 20, 'position': 'absolute'}),
+                html.Div([
+                    html.Label("Ki:"),
+                    dcc.Slider(
+                        id='slider-ki',
+                        min=0,
+                        max=30,
+                        step=0.1,
+                        value=5,
+                        updatemode='drag',
+                        tooltip={'always_visible': True},
+                        marks=None
+                    ),
+                ], style={}),
 
-            html.Div([
-                html.Label("Kd:"),
-                dcc.Slider(
-                    id='slider-kd',
-                    min=0,
-                    max=0.1,
-                    step=0.001,
-                    value=0.04,
-                    vertical=True,
-                    updatemode='drag',
-                    tooltip={'always_visible': True},
-                    marks=None
-                ),
-            ], style={'float': 'left', 'right': 80, 'top': 20, 'position': 'absolute'}),
-            html.Div([
-                html.Label("Target speed:"),
-                dcc.Slider(
-                    id='slider-target',
-                    min=0,
-                    max=10,
-                    step=0.01,
-                    value=5.0,
-
-                    updatemode='drag',
-                    tooltip={'always_visible': True},
-                    marks=None
-                ),
-            ], style={'float': 'left', 'right': 40, 'top': 500, 'width': '80%', 'position': 'absolute'}),
-
-        ], style={'width': '25%', 'height': '15%', 'float': 'left', 'position': 'sticky', 'top': 10, 'left': 1100,
-                  'border': '5px solid #ddd', 'border-radius': '5px'})
-
-    ], style={'height': '500vh', 'top': 0})
+                html.Div([
+                    html.Label("Kd:"),
+                    dcc.Slider(
+                        id='slider-kd',
+                        min=0,
+                        max=0.1,
+                        step=0.001,
+                        value=0.04,
+                        updatemode='drag',
+                        tooltip={'always_visible': True},
+                        marks=None
+                    ),
+                ], style={'position': 'relative', 'top': '0'}),
+                html.Div([
+                    html.Label("Target speed:"),
+                    dcc.Slider(
+                        id='slider-target',
+                        min=0,
+                        max=10,
+                        step=0.01,
+                        value=5.0,
+                        updatemode='drag',
+                        tooltip={'always_visible': True},
+                        marks=None
+                    ),
+                ], style={}),
+            ], style={
+                'grid-rpw-gap': '16px',
+                'grid-column-gap': '16px',
+                'grid-template-rows': 'auto auto',
+                'grid-template-columns': '1fr 1 fr',
+                'grid-auto-columns': '1fr',
+                'display': 'grid'
+            })
+        ], style={'position': 'sticky', 'top': '50px', 'border': '1px solid #ddd', 'border-radius': '5px'})
+    ], style={'height':'500vh'})
 ])
-
 
 # Callback to update the plots based on user input
 @app.callback(
@@ -129,6 +137,7 @@ html.Div([
         Input('slider-target', 'value')
     ]
 )
+
 def update_plots(kp, ki, kd, target):
     global Kp, Ki, Kd
     Kp = kp
@@ -236,6 +245,5 @@ def update_plots(kp, ki, kd, target):
     return speed_figure, pid_output_figure, current_figure, voltage_figure
 
 
-# Run the app
 if __name__ == '__main__':
     app.run_server(debug=True)
