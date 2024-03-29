@@ -18,7 +18,7 @@ app.layout = html.Div([
         html.Img(
             src='data:image/png;base64,{}'.format(base64.b64encode(open('cropped-Logo_PP.png', 'rb').read()).decode()),
             alt='Example Image', width='90'),
-        html.H1('Regulator PID', style={'font-family': 'Arial'}),
+        html.H1('Regulator PID', style={'font-family': 'Arial', 'font-size': '40px'}),
         dcc.Dropdown(
             id='dropdown',
             options=dropdown_options,
@@ -26,7 +26,7 @@ app.layout = html.Div([
         ),
         html.Div(id='output-container')
     ], style={'grid-column-gap': '0px', 'grid-row-gap': '0px',
-             # 'background-color': '#f6f6f6',
+              # 'background-color': '#f6f6f6',
               'flex-flow': 'row',
               'grid-template-rows': 'auto',
               'grid-template-columns': '.5fr 3.75fr .5fr', 'grid-auto-columns': '1fr', 'grid-auto-flow': 'row dense',
@@ -34,10 +34,33 @@ app.layout = html.Div([
               'align-items': 'center', 'justify-items': 'start',
               'display': 'grid'}),
     html.Div([
-        html.H5(
-            'Celem projektu jest stworzenie symulacji silnika prądu stałego uwzględniającej jego charakterystyki fizyczne oraz zaimplementowanie regulatora PID dla kontroli prędkości obrotowej silnika w języku programowania Python. W celu osiągnięcia tego celu przeprowadziliśmy analizę i przekształcenia fizycznych równań silnika.',
-            style={'font-family': 'Arial', 'font-size': '20px', 'font-weight': '400', 'line-height': '30px'}),
-    ], style={'padding-left': '180px', 'padding-right': '180px', 'background-color': '#f6f6f6'}),
+        dcc.Markdown('''
+        # Opis projektu
+        Celem projektu jest stworzenie symulacji silnika prądu stałego uwzględniającej jego charakterystyki fizyczne oraz zaimplementowanie regulatora PID dla kontroli prędkości obrotowej silnika w języku programowania Python. W celu osiągnięcia tego celu przeprowadziliśmy analizę i przekształcenia fizycznych równań silnika.
+        
+        Do realizacji symulacji użyliśmy następujących stałych dla silnika:
+        >
+        >$R$ = 2.0  Ohm, rezystancja uzwojenia wirnika
+        >
+        >$L$ = 0.1 Henry, indukcyjność uzwojenia wirnika
+        >
+        >$B$ = 0.5  Współczynnik tarcia
+        >
+        >$J$ = 0.1  Moment bezwładności wirnika
+        >
+        >$K_m$ = 0.1  Stała momentu obrotowego
+        >
+        >$K_e$ = 0.1  Stała elektromotoryczna
+        >
+        
+        Te parametry pozwalają uwzględnić podstawowe cechy fizyczne silnika i stworzyć precyzyjną symulację jego działania. Implementacja regulatora PID zapewnia dokładną kontrolę prędkości obrotowej silnika, co stanowi kluczowy aspekt tego projektu.
+        
+        ''', mathjax=True, style={'font-family': 'Arial', 'font-size': '20px'}),
+        html.Img(
+            src='data:image/png;base64,{}'.format(base64.b64encode(open('scheme.png', 'rb').read()).decode()),alt='Example Image', width='80%'),
+
+        ], style={'padding-left': '180px', 'padding-right': '180px', 'background-color': '#fafafa'}),
+
     html.Div([
         html.Div([
             dcc.Graph(
@@ -55,11 +78,14 @@ app.layout = html.Div([
             dcc.Graph(
                 id='voltage-plot',
             ),
-        ], style={'width': '70%', 'float': 'left', 'right': 40}),
+        ], style={'width': '69%', 'float': 'left', 'right': 40, 'border': '2px solid #ddd',
+                  'border-radius': '5px', }),
         html.Div([
             html.Div([
+
                 html.Div([
-                    html.Label("Kp:"),
+                    html.Div([], style={'height': '5vh'}),
+                    html.Label("Kp:", style={'left': '24px', 'position': 'relative'}),
                     dcc.Slider(
                         id='slider-kp',
                         min=0,
@@ -73,7 +99,7 @@ app.layout = html.Div([
                 ], style={}),
 
                 html.Div([
-                    html.Label("Ki:"),
+                    html.Label("Ki:", style={'left': '24px', 'position': 'relative'}),
                     dcc.Slider(
                         id='slider-ki',
                         min=0,
@@ -87,7 +113,7 @@ app.layout = html.Div([
                 ], style={}),
 
                 html.Div([
-                    html.Label("Kd:"),
+                    html.Label("Kd:", style={'left': '24px', 'position': 'relative'}),
                     dcc.Slider(
                         id='slider-kd',
                         min=0,
@@ -98,9 +124,9 @@ app.layout = html.Div([
                         tooltip={'always_visible': True},
                         marks=None
                     ),
-                ], style={'position': 'relative', 'top': '0'}),
+                ], style={}),
                 html.Div([
-                    html.Label("Target speed:"),
+                    html.Label("Target speed:", style={'left': '24px', 'position': 'relative'}),
                     dcc.Slider(
                         id='slider-target',
                         min=0,
@@ -118,11 +144,18 @@ app.layout = html.Div([
                 'grid-template-rows': 'auto auto',
                 'grid-template-columns': '1fr 1 fr',
                 'grid-auto-columns': '1fr',
-                'display': 'grid'
+                'display': 'grid',
+                'border': '2px solid #ddd',
+                'border-radius': '5px',
+                'width': '30%',
+                'float': 'right'
             })
-        ], style={'position': 'sticky', 'top': '50px', 'border': '1px solid #ddd', 'border-radius': '5px'})
-    ], style={'height':'500vh'})
+        ], style={'position': 'sticky',
+                  'top': '50px'
+                  })
+    ], style={'height': '500vh'})
 ])
+
 
 # Callback to update the plots based on user input
 @app.callback(
@@ -137,7 +170,6 @@ app.layout = html.Div([
         Input('slider-target', 'value')
     ]
 )
-
 def update_plots(kp, ki, kd, target):
     global Kp, Ki, Kd
     Kp = kp
