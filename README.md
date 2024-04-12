@@ -1,2 +1,1 @@
 # PIT-controller-app
-This project aims to simulate a DC motor’s behavior, incorporating its physical characteristics, and implement a Proportional-Integral-Derivative (PID) controller for controlling the motor’s rotational speed using Plotly. The user interface allows interaction with the PID controller parameters. This project serves as a foundation for understanding and applying control systems in real-world engineering applications.
